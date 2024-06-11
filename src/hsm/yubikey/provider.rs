@@ -239,10 +239,8 @@ impl Provider for YubiKeyProvider {
                     Ok(data) => {
                         output = data.to_vec();
                     }
-                    Err(err) => {
-                        return Err(SecurityModuleError::Hsm(HsmError::DeviceSpecific(
-                            err.to_string(),
-                        )))
+                    Err(_) => {
+                        continue;
                     }
                 }
 
@@ -430,9 +428,7 @@ fn get_free_slot(yubikey: &mut YubiKey) -> Result<RetiredSlotId, SecurityModuleE
                 output = data.to_vec();
             }
             Err(_) => {
-                return Err(SecurityModuleError::Hsm(HsmError::DeviceSpecific(
-                    "No free Slots available".to_string(),
-                )));
+                continue;
             }
         }
         let data = output;
@@ -508,9 +504,7 @@ fn list_all_slots(yubikey: &mut YubiKey) -> Result<Vec<String>, SecurityModuleEr
                 temp_vec = data.to_vec();
             }
             Err(_) => {
-                return Err(SecurityModuleError::Hsm(HsmError::DeviceSpecific(
-                    "No keys in slots found".to_string(),
-                )));
+                continue;
             }
         }
         let data = temp_vec;
@@ -522,10 +516,8 @@ fn list_all_slots(yubikey: &mut YubiKey) -> Result<Vec<String>, SecurityModuleEr
                 );
                 output.push(output_string);
             }
-            Err(err) => {
-                return Err(SecurityModuleError::Hsm(HsmError::DeviceSpecific(
-                    err.to_string(),
-                )));
+            Err(_) => {
+                continue;
             }
         }
     }
