@@ -97,8 +97,6 @@ fn create_new_window(app: &Application, title: String) {
         let combo_encryption_type = gtk::ComboBoxText::new();
         combo_encryption_type.append(None, "RSA1024");
         combo_encryption_type.append(None, "RSA2048");
-        combo_encryption_type.append(None, "ECC256");
-        combo_encryption_type.append(None, "ECC384");
         combo_encryption_type.set_active(Some(0));
         let combo_encryption_type_clone = combo_encryption_type.clone();
 
@@ -113,6 +111,51 @@ fn create_new_window(app: &Application, title: String) {
 
         vbox.append(&label_key_id);
         vbox.append(&entry_key_id_clone);
+        vbox.append(&label_encryption_type);
+        vbox.append(&combo_encryption_type_clone);
+        vbox.append(&button);
+
+        new_window.set_child(Some(&vbox));
+        new_window.present();
+    } else if title == "Encrypt Data" {
+        let new_window = ApplicationWindow::builder()
+            .application(app)
+            .title(title.clone())
+            .default_width(400)
+            .default_height(300)
+            .build();
+
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
+        vbox.set_spacing(5);
+
+        let label_key_id = Label::new(Some("Key ID:"));
+        let entry_key_id = Entry::new();
+        let entry_key_id_clone = entry_key_id.clone();
+
+        let label_data = Label::new(Some("Daten:"));
+        let entry_data = Entry::new();
+        let entry_data_clone = entry_data.clone();
+
+        let label_encryption_type = Label::new(Some("Verschlüsselungsart wählen:"));
+        let combo_encryption_type = gtk::ComboBoxText::new();
+        combo_encryption_type.append(None, "RSA1024");
+        combo_encryption_type.append(None, "RSA2048");
+        combo_encryption_type.set_active(Some(0));
+        let combo_encryption_type_clone = combo_encryption_type.clone();
+
+        let button = Button::with_label("Aktion ausführen");
+        let app2 = app.clone();
+        button.connect_clicked(move |_| {
+            let key_id = entry_key_id.text().to_string();
+            let data = entry_data.text().to_string();
+            let encryption_type = combo_encryption_type.active_text().unwrap().to_string();
+            perform_action(&app2, &title, &data, &key_id, &encryption_type);
+        });
+
+        vbox.append(&label_key_id);
+        vbox.append(&entry_key_id_clone);
+        vbox.append(&label_data);
+        vbox.append(&entry_data_clone);
         vbox.append(&label_encryption_type);
         vbox.append(&combo_encryption_type_clone);
         vbox.append(&button);
