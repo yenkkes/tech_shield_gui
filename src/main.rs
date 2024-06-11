@@ -221,7 +221,7 @@ fn perform_action(
 ) {
     match action {
         "Encrypt Data" => {
-            let ergebnis = encrypt_data(data, key_id, encryption_type);
+            let ergebnis = encrypt_data(app, data, key_id, encryption_type);
             match ergebnis {
                 Ok(encrypt) => {
                     let value = encrypt;
@@ -240,7 +240,7 @@ fn perform_action(
             let mut counter = 0;
             for encrypt in encrypted {
                 let encrypt = encrypt.as_slice();
-                let ergebnis = decrypt_data(encrypt, key_id, encryption_type);
+                let ergebnis = decrypt_data(app, encrypt, key_id, encryption_type);
                 match ergebnis {
                     Ok(erg) => {
                         let ausgabe = format!("The decrypted data is: {}", erg.to_string());
@@ -259,7 +259,7 @@ fn perform_action(
             generate(app, encryption_type, key_id);
         }
         "Sign Data" => {
-            let ergebnis = sign_data(data, key_id, encryption_type);
+            let ergebnis = sign_data(app, data, key_id, encryption_type);
             match ergebnis {
                 Ok(signat) => {
                     let value = signat;
@@ -277,7 +277,7 @@ fn perform_action(
             let signature = unsafe { SIGNATURE.clone() };
             let mut counter = 0;
             for signat in signature {
-                let ergebnis = verify_signature(data, key_id, encryption_type, signat);
+                let ergebnis = verify_signature(app, data, key_id, encryption_type, signat);
                 match ergebnis {
                     Ok(_) => {
                         let ausgabe = "Successfully verified signature";
@@ -297,6 +297,7 @@ fn perform_action(
 }
 
 fn verify_signature(
+    app: &Application,
     data: &str,
     key_id: &str,
     encryption_type: &str,
@@ -324,13 +325,23 @@ fn verify_signature(
         _ => {}
     }
 
-    provider
-        .initialize_module()
-        .expect("Failed to initialize module");
+    let initial = provider.initialize_module();
+    match initial {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to initialize module";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
 
-    provider
-        .load_key(key_id, config)
-        .expect("Failed to load key");
+    let load = provider.load_key(key_id, config);
+    match load {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to laod key";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
 
     let signature = signature.as_slice();
     let data = data.trim().as_bytes();
@@ -346,6 +357,7 @@ fn verify_signature(
 }
 
 fn sign_data(
+    app: &Application,
     data: &str,
     key_id: &str,
     encryption_type: &str,
@@ -372,12 +384,23 @@ fn sign_data(
         _ => {}
     }
 
-    provider
-        .initialize_module()
-        .expect("Failed to initialize module");
-    provider
-        .load_key(key_id, config)
-        .expect("Failed to load key");
+    let initial = provider.initialize_module();
+    match initial {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to initialize module";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
+
+    let load = provider.load_key(key_id, config);
+    match load {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to laod key";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
     let data: &[u8] = data.trim().as_bytes();
     let signature = provider.sign_data(data);
     match signature {
@@ -431,9 +454,15 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
         _ => {}
     }
 
-    provider
-        .initialize_module()
-        .expect("Failed to initialize module");
+    let initial = provider.initialize_module();
+    match initial {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to initialize module";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
+
     match encryption_type {
         "RSA1024" => {
             let rsa = provider.create_key(key_id, config);
@@ -492,6 +521,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
 }
 
 fn encrypt_data(
+    app: &Application,
     data: &str,
     key_id: &str,
     encryption_type: &str,
@@ -518,13 +548,23 @@ fn encrypt_data(
         _ => {}
     }
 
-    provider
-        .initialize_module()
-        .expect("Failed to initialize module");
+    let initial = provider.initialize_module();
+    match initial {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to initialize module";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
 
-    provider
-        .load_key(key_id, config)
-        .expect("Failed to load key");
+    let load = provider.load_key(key_id, config);
+    match load {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to laod key";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
 
     let encrypted = provider.encrypt_data(data.trim().as_bytes());
     match encrypted {
@@ -538,6 +578,7 @@ fn encrypt_data(
 }
 
 fn decrypt_data(
+    app: &Application,
     data: &[u8],
     key_id: &str,
     encryption_type: &str,
@@ -564,12 +605,23 @@ fn decrypt_data(
         _ => {}
     }
 
-    provider
-        .initialize_module()
-        .expect("Failed to initialize module");
-    provider
-        .load_key(key_id, config)
-        .expect("Failed to load key");
+    let initial = provider.initialize_module();
+    match initial {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to initialize module";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
+
+    let load = provider.load_key(key_id, config);
+    match load {
+        Ok(_) => {}
+        Err(_) => {
+            let ausgabe = "Failed to laod key";
+            create_new_window2(app, ausgabe.to_string());
+        }
+    }
 
     let decrypted = provider.decrypt_data(data);
     match decrypted {
