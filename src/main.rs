@@ -93,14 +93,14 @@ fn create_new_window(app: &Application, title: String) {
         let entry_key_id = Entry::new();
         let entry_key_id_clone = entry_key_id.clone();
 
-        let label_encryption_type = Label::new(Some("Verschlüsselungsart wählen:"));
+        let label_encryption_type = Label::new(Some("Choose algorithm:"));
         let combo_encryption_type = gtk::ComboBoxText::new();
         combo_encryption_type.append(None, "RSA1024");
         combo_encryption_type.append(None, "RSA2048");
         combo_encryption_type.set_active(Some(0));
         let combo_encryption_type_clone = combo_encryption_type.clone();
 
-        let button = Button::with_label("Aktion ausführen");
+        let button = Button::with_label("Run");
         let app2 = app.clone();
         button.connect_clicked(move |_| {
             let key_id = entry_key_id.text().to_string();
@@ -136,14 +136,14 @@ fn create_new_window(app: &Application, title: String) {
         let entry_data = Entry::new();
         let entry_data_clone = entry_data.clone();
 
-        let label_encryption_type = Label::new(Some("Verschlüsselungsart wählen:"));
+        let label_encryption_type = Label::new(Some("Choose algorithm:"));
         let combo_encryption_type = gtk::ComboBoxText::new();
         combo_encryption_type.append(None, "RSA1024");
         combo_encryption_type.append(None, "RSA2048");
         combo_encryption_type.set_active(Some(0));
         let combo_encryption_type_clone = combo_encryption_type.clone();
 
-        let button = Button::with_label("Aktion ausführen");
+        let button = Button::with_label("Run");
         let app2 = app.clone();
         button.connect_clicked(move |_| {
             let key_id = entry_key_id.text().to_string();
@@ -181,7 +181,7 @@ fn create_new_window(app: &Application, title: String) {
         let entry_data = Entry::new();
         let entry_data_clone = entry_data.clone();
 
-        let label_encryption_type = Label::new(Some("Verschlüsselungsart wählen:"));
+        let label_encryption_type = Label::new(Some("Choose algorithm:"));
         let combo_encryption_type = gtk::ComboBoxText::new();
         combo_encryption_type.append(None, "RSA1024");
         combo_encryption_type.append(None, "RSA2048");
@@ -190,7 +190,7 @@ fn create_new_window(app: &Application, title: String) {
         combo_encryption_type.set_active(Some(0));
         let combo_encryption_type_clone = combo_encryption_type.clone();
 
-        let button = Button::with_label("Aktion ausführen");
+        let button = Button::with_label("Run");
         let app2 = app.clone();
         button.connect_clicked(move |_| {
             let key_id = entry_key_id.text().to_string();
@@ -224,7 +224,7 @@ fn create_new_window(app: &Application, title: String) {
         let entry_key_id = Entry::new();
         let entry_key_id_clone = entry_key_id.clone();
 
-        let label_encryption_type = Label::new(Some("Welchen Schlüssel wollen sie generieren?"));
+        let label_encryption_type = Label::new(Some("Choose algorithm:"));
         let combo_encryption_type = gtk::ComboBoxText::new();
         combo_encryption_type.append(None, "RSA1024");
         combo_encryption_type.append(None, "RSA2048");
@@ -233,7 +233,7 @@ fn create_new_window(app: &Application, title: String) {
         combo_encryption_type.set_active(Some(0));
         let combo_encryption_type_clone = combo_encryption_type.clone();
 
-        let button = Button::with_label("Generieren");
+        let button = Button::with_label("Run");
         let app2 = app.clone();
 
         let data = " ";
