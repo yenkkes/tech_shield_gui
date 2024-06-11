@@ -22,6 +22,7 @@ use crypto_layer::hsm::{yubikey::YubiKeyProvider, HsmProviderConfig};
 #[cfg(feature = "yubi")]
 
 static mut SIGNATURE: Vec<Vec<u8>> = Vec::new();
+static mut ENCRYPTED_DATA: Vec<Vec<u8>> = Vec::new();
 
 fn main() -> glib::ExitCode {
     let application = Application::builder()
@@ -77,7 +78,48 @@ fn main() -> glib::ExitCode {
 }
 
 fn create_new_window(app: &Application, title: String) {
-    if title != "Generate Key Pair" {
+    if title == "Decrypt Data" {
+        let new_window = ApplicationWindow::builder()
+            .application(app)
+            .title(title.clone())
+            .default_width(400)
+            .default_height(300)
+            .build();
+
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
+        vbox.set_spacing(5);
+
+        let label_key_id = Label::new(Some("Key ID:"));
+        let entry_key_id = Entry::new();
+        let entry_key_id_clone = entry_key_id.clone();
+
+        let label_encryption_type = Label::new(Some("Verschlüsselungsart wählen:"));
+        let combo_encryption_type = gtk::ComboBoxText::new();
+        combo_encryption_type.append(None, "RSA1024");
+        combo_encryption_type.append(None, "RSA2048");
+        combo_encryption_type.append(None, "ECC256");
+        combo_encryption_type.append(None, "ECC384");
+        combo_encryption_type.set_active(Some(0));
+        let combo_encryption_type_clone = combo_encryption_type.clone();
+
+        let button = Button::with_label("Aktion ausführen");
+        let app2 = app.clone();
+        button.connect_clicked(move |_| {
+            let key_id = entry_key_id.text().to_string();
+            let data = "";
+            let encryption_type = combo_encryption_type.active_text().unwrap().to_string();
+            perform_action(&app2, &title, &data, &key_id, &encryption_type);
+        });
+
+        vbox.append(&label_key_id);
+        vbox.append(&entry_key_id_clone);
+        vbox.append(&label_encryption_type);
+        vbox.append(&combo_encryption_type_clone);
+        vbox.append(&button);
+
+        new_window.set_child(Some(&vbox));
+        new_window.present();
+    } else if title != "Generate Key Pair" {
         let new_window = ApplicationWindow::builder()
             .application(app)
             .title(title.clone())
@@ -180,8 +222,39 @@ fn perform_action(
     match action {
         "Encrypt Data" => {
             let ergebnis = encrypt_data(data, key_id, encryption_type);
+            match ergebnis {
+                Ok(encrypt) => {
+                    let value = encrypt;
+                    unsafe { ENCRYPTED_DATA.push(value) };
+                    let ausgabe = "Successfully encrypted";
+                    create_new_window2(app, ausgabe.to_string());
+                }
+                Err(_) => {
+                    let ausgabe = "The data could not be encrypted";
+                    create_new_window2(app, ausgabe.to_string());
+                }
+            }
         }
-        //   "Decrypt Data" => decrypt_data(data, key_id, encryption_type),
+        "Decrypt Data" => {
+            let encrypted = unsafe { ENCRYPTED_DATA.clone() };
+            let mut counter = 0;
+            for encrypt in encrypted {
+                let encrypt = encrypt.as_slice();
+                let ergebnis = decrypt_data(encrypt, key_id, encryption_type);
+                match ergebnis {
+                    Ok(erg) => {
+                        let ausgabe = format!("The decrypted data is: {}", erg.to_string());
+                        create_new_window2(app, ausgabe.to_string());
+                        counter = counter + 1;
+                    }
+                    Err(_) => {}
+                }
+            }
+            if counter == 0 {
+                let ausgabe = "The data could not be decrypted";
+                create_new_window2(app, ausgabe.to_string());
+            }
+        }
         "Generate Key Pair" => {
             generate(app, encryption_type, key_id);
         }
@@ -190,29 +263,33 @@ fn perform_action(
             match ergebnis {
                 Ok(signat) => {
                     let value = signat;
-                    unsafe { SIGNATURE = SIGNATURE.push(value) };
+                    unsafe { SIGNATURE.push(value) };
                     let ausgabe = "Successfully signed";
                     create_new_window2(app, ausgabe.to_string());
                 }
                 Err(_) => {
-                    let ausgabe = "No signature could be created";
+                    let ausgabe = "Signature couldn´t be created";
                     create_new_window2(app, ausgabe.to_string());
                 }
             }
         }
         "Verify Signature" => {
             let signature = unsafe { SIGNATURE.clone() };
-            println!("Signatur: {:?}", signature);
-            let ergebnis = verify_signature(data, key_id, encryption_type, signature);
-            match ergebnis {
-                Ok(_) => {
-                    let ausgabe = "Successfully verified signature";
-                    create_new_window2(app, ausgabe.to_string());
+            let mut counter = 0;
+            for signat in signature {
+                let ergebnis = verify_signature(data, key_id, encryption_type, signat);
+                match ergebnis {
+                    Ok(_) => {
+                        let ausgabe = "Successfully verified signature";
+                        create_new_window2(app, ausgabe.to_string());
+                        counter = counter + 1;
+                    }
+                    Err(_) => {}
                 }
-                Err(_) => {
-                    let ausgabe = "Signature could not be verified";
-                    create_new_window2(app, ausgabe.to_string());
-                }
+            }
+            if counter == 0 {
+                let ausgabe = "Signature couldn´t be verified";
+                create_new_window2(app, ausgabe.to_string());
             }
         }
         _ => {}
@@ -414,7 +491,11 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
     }
 }
 
-fn encrypt_data(data: &str, key_id: &str, encryption_type: &str) {
+fn encrypt_data(
+    data: &str,
+    key_id: &str,
+    encryption_type: &str,
+) -> Result<Vec<u8>, SecurityModuleError> {
     let mut provider = YubiKeyProvider::new(key_id.to_string());
     let mut config = HsmProviderConfig::new(AsymmetricEncryption::Rsa(KeyBits::Bits1024));
     match encryption_type {
@@ -441,6 +522,65 @@ fn encrypt_data(data: &str, key_id: &str, encryption_type: &str) {
         .initialize_module()
         .expect("Failed to initialize module");
 
-    provider.load_key(key_id, config);
-    provider.encrypt_data(data.trim().as_bytes());
+    provider
+        .load_key(key_id, config)
+        .expect("Failed to load key");
+
+    let encrypted = provider.encrypt_data(data.trim().as_bytes());
+    match encrypted {
+        Ok(encrypt) => Ok(encrypt),
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
+        }
+    }
+}
+
+fn decrypt_data(
+    data: &[u8],
+    key_id: &str,
+    encryption_type: &str,
+) -> Result<String, SecurityModuleError> {
+    let mut provider = YubiKeyProvider::new(key_id.to_string());
+    let mut config = HsmProviderConfig::new(AsymmetricEncryption::Rsa(KeyBits::Bits1024));
+    match encryption_type {
+        "RSA1024" => {
+            config = HsmProviderConfig::new(AsymmetricEncryption::Rsa(KeyBits::Bits1024));
+        }
+        "RSA2048" => {
+            config = HsmProviderConfig::new(AsymmetricEncryption::Rsa(KeyBits::Bits2048));
+        }
+        "ECC256" => {
+            config = HsmProviderConfig::new(AsymmetricEncryption::Ecc(EccSchemeAlgorithm::EcDsa(
+                EccCurves::P256,
+            )));
+        }
+        "ECC384" => {
+            config = HsmProviderConfig::new(AsymmetricEncryption::Ecc(EccSchemeAlgorithm::EcDsa(
+                EccCurves::P384,
+            )));
+        }
+        _ => {}
+    }
+
+    provider
+        .initialize_module()
+        .expect("Failed to initialize module");
+    provider
+        .load_key(key_id, config)
+        .expect("Failed to load key");
+
+    let decrypted = provider.decrypt_data(data);
+    match decrypted {
+        Ok(decrypt) => {
+            let decrypt = String::from_utf8(decrypt).unwrap();
+            Ok(decrypt)
+        }
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
+        }
+    }
 }
