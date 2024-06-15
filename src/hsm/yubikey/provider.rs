@@ -200,7 +200,7 @@ impl Provider for YubiKeyProvider {
                     algo = "EccP256"
                 }
                 AsymmetricEncryption::Ecc(EccSchemeAlgorithm::EcDsa(EccCurves::P384)) => {
-                    algo = "EccP284"
+                    algo = "EccP384"
                 }
                 _ => {
                     return Err(SecurityModuleError::Hsm(HsmError::DeviceSpecific(
