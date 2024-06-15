@@ -280,9 +280,9 @@ fn perform_action(
                     let value = encrypt.clone();
                     let value2 = encrypt;
                     unsafe { ENCRYPTED_DATA.push(value) };
-                    let ausgabe = "Successfully encrypted";
+                    let ausgabe = format!("Successfully encrypted the following data: /n{}", data);
                     let ausgabe2 = format!(
-                        "Encrypted as String: {}",
+                        "Encrypted as String: \n{}",
                         general_purpose::STANDARD.encode(value2)
                     );
                     create_new_window2(app, ausgabe.to_string(), ausgabe2);
@@ -302,7 +302,7 @@ fn perform_action(
                 let ergebnis = decrypt_data(app, encrypt, key_id, encryption_type);
                 match ergebnis {
                     Ok(erg) => {
-                        let ausgabe = format!("The decrypted data is: {}", erg.to_string());
+                        let ausgabe = format!("The decrypted data is: \n{}", erg.to_string());
                         create_new_window2(app, ausgabe.to_string(), String::new());
                         counter = counter + 1;
                     }
@@ -325,9 +325,9 @@ fn perform_action(
                     let value2 = signat.clone();
                     let value = signat;
                     unsafe { SIGNATURE.push(value) };
-                    let ausgabe = "Successfully signed";
+                    let ausgabe = format!("Successfully signed the folloiwng data: /n{}", data);
                     let ausgabe2 =
-                        format!("Signature: {}", general_purpose::STANDARD.encode(value2));
+                        format!("Signature: \n{}", general_purpose::STANDARD.encode(value2));
                     create_new_window2(app, ausgabe.to_string(), ausgabe2);
                 }
                 Err(_) => {
@@ -341,10 +341,15 @@ fn perform_action(
             let signature = unsafe { SIGNATURE.clone() };
             let mut counter = 0;
             for signat in signature {
+                let output = signat.clone();
                 let ergebnis = verify_signature(app, data, key_id, encryption_type, signat);
                 match ergebnis {
                     Ok(_) => {
-                        let ausgabe = "Successfully verified signature";
+                        let signat = general_purpose::STANDARD.encode(output);
+                        let ausgabe = format!(
+                            "Successfully verified the following signature: \n {}",
+                            signat
+                        );
                         create_new_window2(app, ausgabe.to_string(), String::new());
                         counter = counter + 1;
                     }
@@ -553,7 +558,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let rsa = provider.create_key(key_id, config);
             match rsa {
                 Ok(_) => {
-                    let ausgabe = "Successfully generated RSA1024 key";
+                    let ausgabe = format!("Successfully generated RSA1024 key: {}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -570,7 +575,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let rsa = provider.create_key(key_id, config);
             match rsa {
                 Ok(_) => {
-                    let ausgabe = "Successfully generated RSA2048 key";
+                    let ausgabe = format!("Successfully generated RSA2048 key: {}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -587,7 +592,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let ecc = provider.create_key(key_id, config);
             match ecc {
                 Ok(_) => {
-                    let ausgabe = "Successfully generated ECC256 key";
+                    let ausgabe = format!("Successfully generated ECC256 key: {}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -604,7 +609,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let ecc = provider.create_key(key_id, config);
             match ecc {
                 Ok(_) => {
-                    let ausgabe = "Successfully generated ECC384 key";
+                    let ausgabe = format!("Successfully generated ECC384 key: {}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
