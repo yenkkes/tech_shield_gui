@@ -289,7 +289,8 @@ fn perform_action(
                 }
                 Err(_) => {
                     let ausgabe = "The data could not be encrypted";
-                    create_new_window2(app, ausgabe.to_string(), String::new());
+                    let ausgabe2 = "No key with this key_id and configuration was found";
+                    create_new_window2(app, ausgabe.to_string(), ausgabe2.to_string());
                 }
             }
         }
@@ -310,7 +311,8 @@ fn perform_action(
             }
             if counter == 0 {
                 let ausgabe = "The data could not be decrypted";
-                create_new_window2(app, ausgabe.to_string(), String::new());
+                let ausgabe2 = "No key with this key_id and configuration was found";
+                create_new_window2(app, ausgabe.to_string(), ausgabe2.to_string());
             }
         }
         "Generate Key Pair" => {
@@ -329,8 +331,9 @@ fn perform_action(
                     create_new_window2(app, ausgabe.to_string(), ausgabe2);
                 }
                 Err(_) => {
-                    let ausgabe = "Signature couldn´t be created";
-                    create_new_window2(app, ausgabe.to_string(), String::new());
+                    let ausgabe = "Failed to sign the data";
+                    let ausgabe2 = "No key with this key_id and configuration was found";
+                    create_new_window2(app, ausgabe.to_string(), ausgabe2.to_string());
                 }
             }
         }
@@ -350,7 +353,8 @@ fn perform_action(
             }
             if counter == 0 {
                 let ausgabe = "Signature couldn´t be verified";
-                create_new_window2(app, ausgabe.to_string(), String::new());
+                let ausgabe2 = "No key with this key_id and configuration was found";
+                create_new_window2(app, ausgabe.to_string(), ausgabe2.to_string());
             }
         }
         _ => {}
@@ -398,9 +402,10 @@ fn verify_signature(
     let load = provider.load_key(key_id, config);
     match load {
         Ok(_) => {}
-        Err(_) => {
-            let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string(), String::new());
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
         }
     }
 
@@ -457,9 +462,10 @@ fn sign_data(
     let load = provider.load_key(key_id, config);
     match load {
         Ok(_) => {}
-        Err(_) => {
-            let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string(), String::new());
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
         }
     }
     let data: &[u8] = data.trim().as_bytes();
@@ -488,7 +494,7 @@ fn create_new_window2(app: &Application, message: String, message2: String) {
     let label_message = Label::new(Some(&message));
     label_message.set_wrap(true);
     label_message.set_wrap_mode(gtk4::pango::WrapMode::Word);
-    label_message.set_max_width_chars(50); // Set a sensible maximum width
+    label_message.set_max_width_chars(50);
 
     vbox.append(&label_message);
 
@@ -496,7 +502,7 @@ fn create_new_window2(app: &Application, message: String, message2: String) {
         let label_message2 = Label::new(Some(&message2));
         label_message2.set_wrap(true);
         label_message2.set_wrap_mode(gtk4::pango::WrapMode::Word);
-        label_message2.set_max_width_chars(50); // Set a sensible maximum width
+        label_message2.set_max_width_chars(50);
 
         vbox.append(&label_message2);
     }
@@ -504,8 +510,8 @@ fn create_new_window2(app: &Application, message: String, message2: String) {
     new_window.set_child(Some(&vbox));
 
     // Setze die maximale Größe
-    new_window.set_default_size(400, 300);
-    new_window.set_size_request(400, 300);
+    new_window.set_default_size(500, 300);
+    new_window.set_size_request(500, 300);
 
     new_window.present();
 }
@@ -655,9 +661,10 @@ fn encrypt_data(
     let load = provider.load_key(key_id, config);
     match load {
         Ok(_) => {}
-        Err(_) => {
-            let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string(), String::new());
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
         }
     }
 
@@ -712,9 +719,10 @@ fn decrypt_data(
     let load = provider.load_key(key_id, config);
     match load {
         Ok(_) => {}
-        Err(_) => {
-            let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string(), String::new());
+        Err(err) => {
+            return Err(SecurityModuleError::SignatureVerificationError(
+                err.to_string(),
+            ))
         }
     }
 
