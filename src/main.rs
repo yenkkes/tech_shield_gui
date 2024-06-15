@@ -1,9 +1,4 @@
-use crypto_layer::SecurityModuleError;
-use gtk::prelude::*;
-use gtk::{glib, Application, ApplicationWindow, Button, Label, ListBox, ListBoxRow};
-use gtk4 as gtk;
-use gtk4::Entry;
-
+use base64::{engine::general_purpose, Engine};
 #[allow(unused_imports)]
 use crypto_layer::common::{
     crypto::{
@@ -16,6 +11,11 @@ use crypto_layer::common::{
     },
     traits::{key_handle::KeyHandle, module_provider::Provider},
 };
+use crypto_layer::SecurityModuleError;
+use gtk::prelude::*;
+use gtk::{glib, Application, ApplicationWindow, Button, Label, ListBox, ListBoxRow};
+use gtk4 as gtk;
+use gtk4::Entry;
 
 use crypto_layer::hsm::{yubikey::YubiKeyProvider, HsmProviderConfig};
 
@@ -37,41 +37,51 @@ fn main() -> glib::ExitCode {
             .default_height(400)
             .build();
 
-        let list_box = ListBox::new();
-        let actions = vec![
-            "Generate Key Pair",
-            "Encrypt Data",
-            "Decrypt Data",
-            "Sign Data",
-            "Verify Signature",
-        ];
+        let mut provider = YubiKeyProvider::new(String::new());
+        let initial = provider.initialize_module();
+        match initial {
+            Ok(_) => {
+                let list_box = ListBox::new();
+                let actions = vec![
+                    "Generate Key Pair",
+                    "Encrypt Data",
+                    "Decrypt Data",
+                    "Sign Data",
+                    "Verify Signature",
+                ];
 
-        for action in actions {
-            let label = Label::new(Some(action));
-            let row = ListBoxRow::new();
-            row.set_child(Some(&label));
-            list_box.append(&row);
-        }
+                for action in actions {
+                    let label = Label::new(Some(action));
+                    let row = ListBoxRow::new();
+                    row.set_child(Some(&label));
+                    list_box.append(&row);
+                }
 
-        let app_clone = app.clone();
+                let app_clone = app.clone();
 
-        list_box.connect_row_activated(move |_, row| {
-            let index = row.index();
-            match index {
-                0 => create_new_window(&app_clone, "Generate Key Pair".to_string()),
-                1 => create_new_window(&app_clone, "Encrypt Data".to_string()),
-                2 => create_new_window(&app_clone, "Decrypt Data".to_string()),
-                3 => create_new_window(&app_clone, "Sign Data".to_string()),
-                4 => create_new_window(&app_clone, "Verify Signature".to_string()),
-                _ => {}
+                list_box.connect_row_activated(move |_, row| {
+                    let index = row.index();
+                    match index {
+                        0 => create_new_window(&app_clone, "Generate Key Pair".to_string()),
+                        1 => create_new_window(&app_clone, "Encrypt Data".to_string()),
+                        2 => create_new_window(&app_clone, "Decrypt Data".to_string()),
+                        3 => create_new_window(&app_clone, "Sign Data".to_string()),
+                        4 => create_new_window(&app_clone, "Verify Signature".to_string()),
+                        _ => {}
+                    }
+                });
+
+                let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
+                vbox.append(&list_box);
+
+                window.set_child(Some(&vbox));
+                window.present();
             }
-        });
-
-        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
-        vbox.append(&list_box);
-
-        window.set_child(Some(&vbox));
-        window.present();
+            Err(_) => {
+                let ausgabe = "Failed to initialize module. Please restart the app and be sure the Yubikey is connected!";
+                create_new_window2(app, ausgabe.to_string(), String::new());
+            }
+        }
     });
 
     application.run()
@@ -267,14 +277,19 @@ fn perform_action(
             let ergebnis = encrypt_data(app, data, key_id, encryption_type);
             match ergebnis {
                 Ok(encrypt) => {
-                    let value = encrypt;
+                    let value = encrypt.clone();
+                    let value2 = encrypt;
                     unsafe { ENCRYPTED_DATA.push(value) };
                     let ausgabe = "Successfully encrypted";
-                    create_new_window2(app, ausgabe.to_string());
+                    let ausgabe2 = format!(
+                        "Encrypted as String: {}",
+                        general_purpose::STANDARD.encode(value2)
+                    );
+                    create_new_window2(app, ausgabe.to_string(), ausgabe2);
                 }
                 Err(_) => {
                     let ausgabe = "The data could not be encrypted";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -287,7 +302,7 @@ fn perform_action(
                 match ergebnis {
                     Ok(erg) => {
                         let ausgabe = format!("The decrypted data is: {}", erg.to_string());
-                        create_new_window2(app, ausgabe.to_string());
+                        create_new_window2(app, ausgabe.to_string(), String::new());
                         counter = counter + 1;
                     }
                     Err(_) => {}
@@ -295,7 +310,7 @@ fn perform_action(
             }
             if counter == 0 {
                 let ausgabe = "The data could not be decrypted";
-                create_new_window2(app, ausgabe.to_string());
+                create_new_window2(app, ausgabe.to_string(), String::new());
             }
         }
         "Generate Key Pair" => {
@@ -305,14 +320,17 @@ fn perform_action(
             let ergebnis = sign_data(app, data, key_id, encryption_type);
             match ergebnis {
                 Ok(signat) => {
+                    let value2 = signat.clone();
                     let value = signat;
                     unsafe { SIGNATURE.push(value) };
                     let ausgabe = "Successfully signed";
-                    create_new_window2(app, ausgabe.to_string());
+                    let ausgabe2 =
+                        format!("Signature: {}", general_purpose::STANDARD.encode(value2));
+                    create_new_window2(app, ausgabe.to_string(), ausgabe2);
                 }
                 Err(_) => {
                     let ausgabe = "Signature couldn´t be created";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -324,7 +342,7 @@ fn perform_action(
                 match ergebnis {
                     Ok(_) => {
                         let ausgabe = "Successfully verified signature";
-                        create_new_window2(app, ausgabe.to_string());
+                        create_new_window2(app, ausgabe.to_string(), String::new());
                         counter = counter + 1;
                     }
                     Err(_) => {}
@@ -332,7 +350,7 @@ fn perform_action(
             }
             if counter == 0 {
                 let ausgabe = "Signature couldn´t be verified";
-                create_new_window2(app, ausgabe.to_string());
+                create_new_window2(app, ausgabe.to_string(), String::new());
             }
         }
         _ => {}
@@ -373,7 +391,7 @@ fn verify_signature(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to initialize module";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -382,7 +400,7 @@ fn verify_signature(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -432,7 +450,7 @@ fn sign_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to initialize module";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -441,7 +459,7 @@ fn sign_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
     let data: &[u8] = data.trim().as_bytes();
@@ -456,7 +474,7 @@ fn sign_data(
     }
 }
 
-fn create_new_window2(app: &Application, message: String) {
+fn create_new_window2(app: &Application, message: String, message2: String) {
     let new_window = ApplicationWindow::builder()
         .application(app)
         .title("Nachricht")
@@ -464,13 +482,31 @@ fn create_new_window2(app: &Application, message: String) {
         .default_height(300)
         .build();
 
-    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
+    let vbox = gtk4::Box::new(gtk4::Orientation::Vertical, 5);
     vbox.set_spacing(5);
 
     let label_message = Label::new(Some(&message));
+    label_message.set_wrap(true);
+    label_message.set_wrap_mode(gtk4::pango::WrapMode::Word);
+    label_message.set_max_width_chars(50); // Set a sensible maximum width
+
     vbox.append(&label_message);
 
+    if !message2.is_empty() {
+        let label_message2 = Label::new(Some(&message2));
+        label_message2.set_wrap(true);
+        label_message2.set_wrap_mode(gtk4::pango::WrapMode::Word);
+        label_message2.set_max_width_chars(50); // Set a sensible maximum width
+
+        vbox.append(&label_message2);
+    }
+
     new_window.set_child(Some(&vbox));
+
+    // Setze die maximale Größe
+    new_window.set_default_size(400, 300);
+    new_window.set_size_request(400, 300);
+
     new_window.present();
 }
 
@@ -502,7 +538,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to initialize module";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -512,11 +548,15 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             match rsa {
                 Ok(_) => {
                     let ausgabe = "Successfully generated RSA1024 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(
+                        app,
+                        ausgabe.to_string(),
+                        provider.get_pub_key().to_string(),
+                    );
                 }
                 Err(_) => {
                     let ausgabe = "Failed to generate RSA1024 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -525,11 +565,15 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             match rsa {
                 Ok(_) => {
                     let ausgabe = "Successfully generated RSA2048 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(
+                        app,
+                        ausgabe.to_string(),
+                        provider.get_pub_key().to_string(),
+                    );
                 }
                 Err(_) => {
                     let ausgabe = "Failed to generate RSA2048 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -538,11 +582,15 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             match ecc {
                 Ok(_) => {
                     let ausgabe = "Successfully generated ECC256 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(
+                        app,
+                        ausgabe.to_string(),
+                        provider.get_pub_key().to_string(),
+                    );
                 }
                 Err(_) => {
                     let ausgabe = "Failed to generate ECC256 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -551,11 +599,15 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             match ecc {
                 Ok(_) => {
                     let ausgabe = "Successfully generated ECC384 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(
+                        app,
+                        ausgabe.to_string(),
+                        provider.get_pub_key().to_string(),
+                    );
                 }
                 Err(_) => {
                     let ausgabe = "Failed to generate ECC384 key";
-                    create_new_window2(app, ausgabe.to_string());
+                    create_new_window2(app, ausgabe.to_string(), String::new());
                 }
             }
         }
@@ -596,7 +648,7 @@ fn encrypt_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to initialize module";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -605,7 +657,7 @@ fn encrypt_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -653,7 +705,7 @@ fn decrypt_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to initialize module";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 
@@ -662,7 +714,7 @@ fn decrypt_data(
         Ok(_) => {}
         Err(_) => {
             let ausgabe = "Failed to laod key";
-            create_new_window2(app, ausgabe.to_string());
+            create_new_window2(app, ausgabe.to_string(), String::new());
         }
     }
 

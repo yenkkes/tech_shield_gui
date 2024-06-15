@@ -55,4 +55,6 @@ pub trait Provider: Send + Sync + KeyHandle + Debug {
     /// A `Result` that, on success, contains `Ok(())`, indicating that the module was initialized successfully.
     /// On failure, it returns a `SecurityModuleError`.
     fn initialize_module(&mut self) -> Result<(), SecurityModuleError>;
+
+    fn get_pub_key(&mut self) -> String;
 }

@@ -318,6 +318,11 @@ impl Provider for YubiKeyProvider {
             }
         }
     }
+
+    fn get_pub_key(&mut self) -> String {
+        let output = self.pkey.clone();
+        output
+    }
 }
 
 /// Saves the key object to the YubiKey device.
