@@ -558,7 +558,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let rsa = provider.create_key(key_id, config);
             match rsa {
                 Ok(_) => {
-                    let ausgabe = format!("Successfully generated RSA1024 key: {}\n\n", key_id);
+                    let ausgabe = format!("Successfully generated RSA1024 key: \n{}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -575,7 +575,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let rsa = provider.create_key(key_id, config);
             match rsa {
                 Ok(_) => {
-                    let ausgabe = format!("Successfully generated RSA2048 key: {}\n\n", key_id);
+                    let ausgabe = format!("Successfully generated RSA2048 key: \n{}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -592,7 +592,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let ecc = provider.create_key(key_id, config);
             match ecc {
                 Ok(_) => {
-                    let ausgabe = format!("Successfully generated ECC256 key: {}\n\n", key_id);
+                    let ausgabe = format!("Successfully generated ECC256 key: \n{}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
@@ -609,7 +609,7 @@ fn generate(app: &Application, encryption_type: &str, key_id: &str) {
             let ecc = provider.create_key(key_id, config);
             match ecc {
                 Ok(_) => {
-                    let ausgabe = format!("Successfully generated ECC384 key: {}\n\n", key_id);
+                    let ausgabe = format!("Successfully generated ECC384 key: \n{}\n\n", key_id);
                     create_new_window2(
                         app,
                         ausgabe.to_string(),
