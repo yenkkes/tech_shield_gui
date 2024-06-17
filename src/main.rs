@@ -280,7 +280,7 @@ fn perform_action(
                     let value = encrypt.clone();
                     let value2 = encrypt;
                     unsafe { ENCRYPTED_DATA.push(value) };
-                    let ausgabe = format!("Successfully encrypted the following data: /n{}", data);
+                    let ausgabe = format!("Successfully encrypted the following data: \n{}", data);
                     let ausgabe2 = format!(
                         "Encrypted as String: \n{}",
                         general_purpose::STANDARD.encode(value2)
@@ -325,7 +325,7 @@ fn perform_action(
                     let value2 = signat.clone();
                     let value = signat;
                     unsafe { SIGNATURE.push(value) };
-                    let ausgabe = format!("Successfully signed the folloiwng data: /n{}", data);
+                    let ausgabe = format!("Successfully signed the folloiwng data: \n{}", data);
                     let ausgabe2 =
                         format!("Signature: \n{}", general_purpose::STANDARD.encode(value2));
                     create_new_window2(app, ausgabe.to_string(), ausgabe2);
